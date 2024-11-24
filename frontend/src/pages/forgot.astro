@@ -1,0 +1,152 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="forgot">
+  <div class="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        Restablecer contraseña
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
+      </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <form class="space-y-6" id="resetForm">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">
+              Correo electrónico
+            </label>
+            <div class="mt-1 relative">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="ejemplo@correo.com"
+              />
+              <!-- Mensaje de error -->
+              <div class="hidden text-red-500 text-sm mt-1" id="errorMessage">
+                Por favor, introduce un correo electrónico válido
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              id="submitButton"
+            >
+              <span id="buttonText">Enviar enlace de recuperación</span>
+              <svg id="loadingIcon" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        <!-- Enlace para volver -->
+        <div class="mt-6 text-center">
+          <a href="/" class="text-sm text-blue-600 hover:text-blue-500">
+            Volver al inicio de sesión
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('resetForm');
+    const emailInput = document.getElementById('email');
+    const errorMessage = document.getElementById('errorMessage');
+    const submitButton = document.getElementById('submitButton');
+    const buttonText = document.getElementById('buttonText');
+    const loadingIcon = document.getElementById('loadingIcon');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Validación básica del email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailInput.value)) {
+        errorMessage.classList.remove('hidden');
+        return;
+      }
+
+      // Ocultar mensaje de error si existe
+      errorMessage.classList.add('hidden');
+      
+      // Mostrar estado de carga
+      submitButton.disabled = true;
+      buttonText.textContent = 'Enviando...';
+      loadingIcon.classList.remove('hidden');
+
+      try {
+        // Primero verificamos si el correo existe en la base de datos
+        const checkResponse = await fetch('http://localhost:3000/api/check-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ correo: emailInput.value }),
+        });
+
+        const checkData = await checkResponse.json();
+
+        if (checkResponse.ok) {
+          // Imprimir en consola el correo y el id del usuario si existe
+          console.log('Usuario encontrado:', checkData);
+
+          // Realizar solicitud POST para enviar el correo de restablecimiento
+          const response = await fetch('http://localhost:3000/api/request-password-reset', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ correo: emailInput.value }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // Éxito
+            buttonText.textContent = '¡Enlace enviado!';
+            submitButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
+          } else {
+            // Error al enviar
+            buttonText.textContent = 'Error al enviar';
+            errorMessage.textContent = data.message || 'Hubo un error al enviar el correo. Por favor, inténtalo de nuevo.';
+            errorMessage.classList.remove('hidden');
+          }
+        } else {
+          // Error, correo no encontrado
+          console.log('Correo no encontrado');
+          buttonText.textContent = 'Error al enviar';
+          errorMessage.textContent = 'El correo no está registrado.';
+          errorMessage.classList.remove('hidden');
+        }
+      } catch (error) {
+        // Error de red o conexión
+        buttonText.textContent = 'Error al enviar';
+        errorMessage.textContent = 'Hubo un error al enviar el correo. Por favor, inténtalo de nuevo.';
+        errorMessage.classList.remove('hidden');
+      } finally {
+        loadingIcon.classList.add('hidden');
+        submitButton.disabled = false;
+      }
+    });
+
+    // Limpiar mensaje de error cuando el usuario empiece a escribir
+    emailInput.addEventListener('input', () => {
+      errorMessage.classList.add('hidden');
+    });
+  </script>
+</Layout>

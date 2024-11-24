@@ -1,0 +1,122 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="reset">
+  <div class="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        Cambiar contraseña
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Por favor, introduce tu nueva contraseña
+      </p>
+      <!-- Mostrar el correo del usuario -->
+      <div class="mt-2 text-center text-sm text-gray-600">
+        <p><strong>Correo de usuario: </strong><span id="userEmail"></span></p>
+      </div>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <form class="space-y-6" id="resetForm">
+          <!-- Campo de nueva contraseña -->
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">
+              Nueva contraseña
+            </label>
+            <div class="mt-1 relative">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm pr-10"
+                placeholder="••••••••"
+                minlength="8"
+              />
+            </div>
+          </div>
+
+          <!-- Campo de confirmar contraseña -->
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-700">
+              Confirmar contraseña
+            </label>
+            <div class="mt-1 relative">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm pr-10"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              class="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Cambiar contraseña
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Obtener los parámetros de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    const correo = urlParams.get('correo');
+    const token = urlParams.get('token');
+
+    // Imprimir los datos del usuario en consola
+    console.log(`Datos de la cuenta recibidos: ID = ${id}, Correo = ${correo}, Token = ${token}`);
+
+    // Mostrar el correo en la interfaz
+    document.getElementById('userEmail').textContent = correo;
+
+    // Manejar el formulario de restablecimiento de contraseña
+    document.getElementById('resetForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      // Obtener los valores del formulario
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      // Verificar si las contraseñas coinciden
+      if (password !== confirmPassword) {
+        alert('Las contraseñas no coinciden');
+        return;
+      }
+
+      // Enviar la solicitud a la nueva URL del servidor
+      const response = await fetch('http://localhost:3000/api/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          correo: correo,  // Enviar el correo
+          password: password,  // Enviar la nueva contraseña
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(result.message);  // Mostrar mensaje de éxito
+        // Redirigir o hacer algo más después de un cambio exitoso
+      } else {
+        alert(result.message || 'Error al cambiar la contraseña');
+      }
+    });
+  });
+</script>

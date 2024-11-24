@@ -1,0 +1,50 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { ArticlesContainer } from '../components/ArticlesContainer';
+import Sidebar from '../components/Sidebar';
+
+---
+
+<Layout title="Artículos">
+  <div id="app-container" class="flex h-screen">
+    <Sidebar client:load />
+    
+    <main class="flex-1 px-6 py-4">
+      <!-- Contenido principal que se mostrará solo con token válido -->
+      <div id="articles-content" class="hidden">
+        <ArticlesContainer client:load />
+      </div>
+
+      <!-- Mensaje de error que se mostrará si no hay token -->
+      <div id="error-message" class="flex justify-center items-center h-screen text-red-600 text-2xl font-semibold">
+        <p>No tienes permisos para acceder a esta página. Por favor, inicia sesión.</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Solo se ejecuta en el cliente
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      const appContainer = document.getElementById('app-container');
+      const errorMessage = document.getElementById('error-message');
+      const articlesContent = document.getElementById('articles-content');
+      const userId = localStorage.getItem('userId');
+      console.log('ID del usuario:', userId);
+      // Verificamos si los elementos existen antes de intentar acceder a sus propiedades
+      if (appContainer && errorMessage && articlesContent) {
+        if (!token) {
+          // Si no hay token, mostramos el mensaje de error y ocultamos el contenido
+          appContainer.style.display = 'none';
+          errorMessage.style.display = 'flex';
+        } else {
+          // Si hay token, mostramos el contenido y ocultamos el mensaje de error
+          errorMessage.style.display = 'none';
+          articlesContent.style.display = 'block';
+        }
+      } else {
+        console.error('Algunos de los elementos no se encontraron en el DOM');
+      }
+    }
+  </script>
+</Layout>
